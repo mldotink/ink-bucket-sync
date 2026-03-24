@@ -21,12 +21,17 @@ EOF
     ;;
   s3)
     IFS=':' read -r ACCESS_KEY SECRET_KEY <<< "${BUCKET_CREDENTIALS}"
+    S3_PROVIDER="Other"
+    if [ -z "${BUCKET_ENDPOINT:-}" ]; then
+      S3_PROVIDER="AWS"
+    fi
     cat > "${RCLONE_CONF}" <<EOF
 [remote]
 type = s3
-provider = Other
+provider = ${S3_PROVIDER}
 access_key_id = ${ACCESS_KEY}
 secret_access_key = ${SECRET_KEY}
+region = ${BUCKET_REGION:-}
 endpoint = ${BUCKET_ENDPOINT:-}
 no_check_bucket = true
 EOF
@@ -73,7 +78,7 @@ log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) [sync] $*"; }
 final_sync() {
   if [ "${SYNC_MODE}" != "readonly" ]; then
     log "Final sync before exit"
-    ${RCLONE} sync "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Final sync error"
+    ${RCLONE} copy "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Final sync error"
   fi
   exit 0
 }
@@ -94,18 +99,18 @@ case "${SYNC_MODE}" in
     while true; do
       sleep "${SYNC_INTERVAL}" &
       wait $!
-      ${RCLONE} sync "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Sync error (will retry)"
+      ${RCLONE} copy "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Sync error (will retry)"
     done
     ;;
   bidirectional)
-    log "Initial sync from ${REMOTE} → ${SYNC_PATH}"
-    ${RCLONE} sync "${REMOTE}" "${SYNC_PATH}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Initial sync failed (bucket may be empty)"
+    log "Initial pull from ${REMOTE} → ${SYNC_PATH}"
+    ${RCLONE} copy "${REMOTE}" "${SYNC_PATH}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Initial pull failed (bucket may be empty)"
     touch /tmp/.sync-ready
-    log "Starting bidirectional sync loop (every ${SYNC_INTERVAL}s)"
+    log "Starting push loop (every ${SYNC_INTERVAL}s)"
     while true; do
       sleep "${SYNC_INTERVAL}" &
       wait $!
-      ${RCLONE} sync "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Sync error (will retry)"
+      ${RCLONE} copy "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" --quiet 2>&1 || log "Push error (will retry)"
     done
     ;;
   *)
