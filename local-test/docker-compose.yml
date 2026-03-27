@@ -1,0 +1,18 @@
+services:
+  sync:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: ink-bucket-sync:local-test
+    container_name: ink-bucket-sync-local-test
+    environment:
+      BUCKET_PROVIDER: local
+      BUCKET_PATH: /remote
+      SYNC_PATH: /data
+      SYNC_MODE: bidirectional
+      SYNC_INTERVAL: 3
+      WATCHDOG_ENABLED: "true"
+      WATCHDOG_DEBOUNCE: 1
+    volumes:
+      - ./local-path:/data
+      - ./remote-path:/remote
