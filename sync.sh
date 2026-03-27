@@ -160,7 +160,7 @@ run_bisync_once() {
   fi
 
   log "Running bidirectional sync (${reason})"
-  if "${RCLONE_CMD[@]}" bisync "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" "${bisync_extra_flags[@]}" --resilient --quiet 2>&1; then
+  if "${RCLONE_CMD[@]}" bisync "${SYNC_PATH}" "${REMOTE}" "${EXCLUDE_FLAGS[@]}" "${bisync_extra_flags[@]}" --resilient --force --create-empty-src-dirs --quiet 2>&1; then
     LAST_SYNC_EPOCH="${now}"
   else
     log "Bidirectional sync failed (will retry)"
