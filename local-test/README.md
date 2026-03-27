@@ -1,72 +1,36 @@
-# Local Docker Compose Sync Test
+# Local Test (Quick)
 
-This folder provides a local bidirectional sync smoke test using Docker Compose.
-It runs `ink-bucket-sync` with `BUCKET_PROVIDER=local` and two bind mounts:
+Run from `local-test/`.
 
-- `local-path/` mounted to `/data` (the app sync path)
-- `remote-path/` mounted to `/remote` (simulated bucket path)
-
-## Prerequisites
-
-- Docker Desktop / OrbStack with Compose support
-- Run commands from this directory: `local-test/`
-
-## Start
+## 1) Start
 
 ```bash
 docker compose up --build
 ```
 
-You should see periodic logs like:
+Leave this terminal running.
 
-```text
-[sync] Running bidirectional sync (...)
-```
+## 2) Test bidirectional sync
 
-## Test Local -> Remote
-
-In another terminal:
+Open a second terminal in `local-test/` and run:
 
 ```bash
-echo "change-from-local" > local-path/from-local.txt
+echo "from-local" > local-path/from-local.txt
+echo "from-remote" > remote-path/from-remote.txt
+sleep 5
+ls -la local-path
 ls -la remote-path
 ```
 
-Expected: `remote-path/from-local.txt` appears quickly (watchdog-triggered sync).
+Expected:
 
-## Test Remote -> Local
+- `remote-path/from-local.txt` exists
+- `local-path/from-remote.txt` exists
 
-In another terminal:
+If both files appear on the opposite side, sync is working.
 
-```bash
-echo "change-from-remote" > remote-path/from-remote.txt
-ls -la local-path
-```
-
-Expected: `local-path/from-remote.txt` appears on next poll cycle (default ~3s).
-
-## Watch Logs
-
-```bash
-docker compose logs -f sync
-```
-
-## Stop
+## 3) Stop
 
 ```bash
 docker compose down
 ```
-
-## Reset Test Files
-
-```bash
-rm -f local-path/* remote-path/*
-cp sample-files/local-path-example.txt local-path/
-cp sample-files/remote-path-example.txt remote-path/
-```
-
-## Notes
-
-- `SYNC_MODE=bidirectional` uses `rclone bisync`.
-- Local file changes trigger fast sync via watchdog (`inotifywait`).
-- Remote-side changes are picked up by the periodic poll loop.
