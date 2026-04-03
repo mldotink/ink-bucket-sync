@@ -122,6 +122,7 @@ EXCLUDE_FLAGS=(
   --exclude ".env.production"
   --exclude "*.pyc"
   --exclude "*.log"
+  --exclude "opencode.db*"
 )
 WATCH_EXCLUDE_REGEX='(^|/)(node_modules|\.venv|__pycache__|\.git|\.next|\.nuxt|dist|coverage|\.cache|tmp)(/|$)|\.pyc$|\.log$|(^|/)\.env(\..*)?$'
 
